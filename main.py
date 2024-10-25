@@ -4,4 +4,4 @@ app=FastAPI()
 
 @app.get("/{id}")
 def income(id: int):
-    return{"message":f"hi{id}"}
+    return{"message":f"hello{id}"}
