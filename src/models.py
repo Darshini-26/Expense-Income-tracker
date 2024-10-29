@@ -17,7 +17,6 @@ class Income(Base):
     account = relationship("BankAccount", back_populates="incomes")
     category = relationship("Category", back_populates="incomes")
 
-
 class Expense(Base):
     __tablename__ = "expenses"
     
@@ -43,7 +42,6 @@ class BankAccount(Base):
     
     expenses = relationship("Expense", back_populates="account")
     incomes = relationship("Income", back_populates="account")
-
 
 class Category(Base):
     __tablename__ = "categories"
