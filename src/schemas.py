@@ -19,6 +19,7 @@ class Income(IncomeBase):
     class Config:
         orm_mode = True
 
+
 class ExpenseBase(BaseModel):
     user_id: int
     expense_amt: float
@@ -36,6 +37,7 @@ class Expense(ExpenseBase):
     class Config:
         orm_mode = True
 
+
 class BankAccountBase(BaseModel):
     user_id: int
     balance: float
@@ -50,6 +52,7 @@ class BankAccount(BankAccountBase):
 
     class Config:
         orm_mode = True
+        
 
 class CategoryBase(BaseModel):
     user_id: int
