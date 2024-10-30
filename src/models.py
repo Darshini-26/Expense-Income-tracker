@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DECIMAL, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from src.database import Base
-import datetime
+from datetime import datetime
 
 class Income(Base):
     __tablename__ = "incomes"
