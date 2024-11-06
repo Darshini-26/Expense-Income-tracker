@@ -29,7 +29,7 @@ def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/income/", response_model=List[schemas.Income])
-def read_income( response: Response, db: Session = Depends(get_db)):
+def read_income(db: Session = Depends(get_db)):
     db_income = db.query(models.Income).all()
     if not db_income:
         return []
