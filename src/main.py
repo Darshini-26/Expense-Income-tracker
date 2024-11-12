@@ -36,7 +36,7 @@ def read_income(db: Session = Depends(get_db)):
     return db_income
 
 @app.put("/income/{income_id}", response_model=schemas.Income)
-def create_update(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db)):
+def update_income(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db_income = db.query(models.Income).filter(models.Income.income_id==income_id).first()
     db_income.user_id = income.user_id
     db_income.income_amt = income.income_amt
@@ -55,3 +55,5 @@ def delete_income(income_id:int , db: Session = Depends(get_db)):
         db.commit()
         return {"Message":"Records deleted"}
     return {"Message":"ID not available"}
+
+
