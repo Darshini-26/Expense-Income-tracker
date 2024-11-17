@@ -143,3 +143,30 @@ def create_category(category: schemas.CategoryCreate,db: Session= Depends(get_db
     db.commit()
     db.refresh(db_category)
     return db_category
+
+@app.get("/categories/",response_model=List[schemas.Category])
+def read_category(db:Session=Depends(get_db)):
+    db_category=db.query(models.Category).all()
+    if not db_category:
+        return[]
+    return db_category
+
+@app.put("/categories/{category_id}",response_model=schemas.Category)
+def update(category_id:int,category: schemas.CategoryCreate,db:Session=Depends(get_db)):
+    db_category=db.query(models.Category).filter(models.Category.category_id==category_id).first()
+    if not db_category:
+        return{"Category not found"}
+    db_category.user_id=category.user_id
+    db_category.category_type=category.category_type
+    db.commit()
+    db.refresh(db_category)
+    return db_category
+
+@app.delete("/categories/{category_id}")
+def delete_category(category_id:int,db:Session=Depends(get_db)):
+    db_category=db.query(models.Category).filter(models.Category.category_id==category_id).first()
+    if not db_category:
+        return{"Catgeory not found"}
+    db.delete(db_category)
+    db.commit()
+    return db_category
