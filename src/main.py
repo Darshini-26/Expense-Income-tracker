@@ -34,6 +34,13 @@ def read_income(db: Session = Depends(get_db)):
         return []
     return db_income
 
+@app.get("/income/{income_id}", response_model=schemas.Income)
+def read_income(income_id: int, db: Session = Depends(get_db)):
+    db_income = db.query(models.Income).filter(models.Income.income_id==income_id).first()
+    if not db_income:
+        return []
+    return db_income
+
 @app.put("/income/{income_id}", response_model=schemas.Income)
 def update_income(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db_income = db.query(models.Income).filter(models.Income.income_id==income_id).first()
@@ -72,6 +79,13 @@ def read_expense(db: Session = Depends(get_db)):
         return []
     return db_expense
 
+@app.get("/expense/{expense_id}", response_model=schemas.Expense)
+def read_expense(expense_id: int, db: Session = Depends(get_db)):
+    db_expense = db.query(models.Expense).filter(models.Expense.expense_id==expense_id).first()
+    if not db_expense:
+        return []
+    return db_expense
+
 @app.put("/expense/{expense_id}", response_model=schemas.Expense)
 def update_expense(expense_id: int, expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
     db_expense = db.query(models.Expense).filter(models.Expense.expense_id==expense_id).first()
@@ -92,4 +106,33 @@ def delete_expense(expense_id:int , db: Session = Depends(get_db)):
         db.commit()
         return {"Message":"Records deleted"}
     return {"Message":"ID not available"}
+
+
+@app.post("/bank_account/",response_model=schemas.BankAccount)
+def create_bank_account( bank_account: schemas.BankAccountCreate,db: Session=Depends(get_db)):
+    db_account = models.BankAccount(**bank_account.dict())
+    db.add(db_account)
+    db.commit()
+    db.refresh(db_account)
+    return db_account
+
+@app.get("/bank_accounts/{account_id}", response_model=schemas.BankAccount)
+def read_bank_account( account_id: int,db: Session=Depends(get_db)):
+    return db.query(schemas.BankAccount).filter(models.BankAccount.account_id == account_id).first()
+
+@app.put("/bank_accounts/{account_id}", response_model=schemas.BankAccount)
+def update_bank_account(account_id: int, bank_account: schemas.BankAccountCreate,db: Session=Depends(get_db)):
+    db_account = db.query(models.BankAccount).filter(models.BankAccount.account_id == account_id).first()
+    for key, value in bank_account.dict().items():
+        setattr(db_account, key, value)
+    db.commit()
+    db.refresh(db_account)
+    return db_account
+
+@app.delete("/bank_accounts/{account_id}")
+def delete_bank_account(account_id: int,db: Session=Depends(get_db) ):
+    db_account = db.query(models.BankAccount).filter(models.BankAccount.account_id == account_id).first()
+    db.delete(db_account)
+    db.commit()
+    return db_account
 
