@@ -1,6 +1,9 @@
+
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, Union
+
+
 
 class IncomeBase(BaseModel):
     user_id: int
@@ -66,3 +69,4 @@ class Category(CategoryBase):
 
     class Config:
         orm_mode = True
+

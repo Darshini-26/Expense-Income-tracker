@@ -27,7 +27,6 @@ def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db.refresh(db_income)
     return db_income
 
-
 @app.get("/income/", response_model=List[schemas.Income])
 def read_income(db: Session = Depends(get_db)):
     db_income = db.query(models.Income).all()
@@ -93,3 +92,4 @@ def delete_expense(expense_id:int , db: Session = Depends(get_db)):
         db.commit()
         return {"Message":"Records deleted"}
     return {"Message":"ID not available"}
+
