@@ -136,3 +136,11 @@ def delete_bank_account(account_id: int,db: Session=Depends(get_db) ):
     db.commit()
     return db_account
 
+@app.post("/categories/", response_model=schemas.Category)
+def create_category(category: schemas.CategoryCreate,db: Session= Depends(get_db)):
+    db_category = models.Category(**category.dict())
+    db.add(db_category)
+    db.commit()
+    db.refresh(db_category)
+    return db_category
+
