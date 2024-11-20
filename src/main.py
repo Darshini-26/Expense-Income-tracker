@@ -108,6 +108,7 @@ def delete_expense(expense_id:int , db: Session = Depends(get_db)):
         return {"Message":"Records deleted"}
     return {"Message":"ID not available"}
 
+
 @app.post("/bank_account/", tags=["BANK ACCOUNT"],response_model=schemas.BankAccount)
 def create_bank_account( bank_account: schemas.BankAccountCreate,db: Session=Depends(get_db)):
     db_account = models.BankAccount(**bank_account.dict())
@@ -144,6 +145,7 @@ def create_category(category: schemas.CategoryCreate,db: Session= Depends(get_db
     db.refresh(db_category)
     return db_category
 
+
 @app.get("/categories/",tags=["CATEGORY"],response_model=List[schemas.Category])
 def read_category(db:Session=Depends(get_db)):
     db_category=db.query(models.Category).all()
@@ -170,3 +172,4 @@ def delete_category(category_id:int,db:Session=Depends(get_db)):
     db.delete(db_category)
     db.commit()
     return db_category
+
