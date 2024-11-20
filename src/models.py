@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, String, DECIMAL, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from src.database import Base
@@ -11,7 +10,7 @@ class Income(Base):
     user_id = Column(Integer, nullable=False)
     income_amt = Column(DECIMAL, nullable=False)
     date = Column(DateTime, default=datetime.now)
-    description = Column(String)
+    description = Column(String, nullable=True)
     account_id = Column(Integer, ForeignKey("bank_accounts.account_id"), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.category_id"), nullable=False)
   
@@ -53,3 +52,4 @@ class Category(Base):
  
     expenses = relationship("Expense", back_populates="category")
     incomes = relationship("Income", back_populates="category")
+

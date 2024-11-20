@@ -1,13 +1,15 @@
 
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
+
+
 
 class IncomeBase(BaseModel):
     user_id: int
     income_amt: float
     date: datetime
-    description: Optional[str] = None
+    description: Optional[Union[str,None]] = None
     account_id: int
     category_id: int
 
