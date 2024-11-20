@@ -52,3 +52,4 @@ class Category(Base):
  
     expenses = relationship("Expense", back_populates="category")
     incomes = relationship("Income", back_populates="category")
+
