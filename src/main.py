@@ -27,7 +27,6 @@ def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db.refresh(db_income)
     return db_income
 
-
 @app.get("/income/", response_model=List[schemas.Income])
 def read_income(db: Session = Depends(get_db)):
     db_income = db.query(models.Income).all()
@@ -108,6 +107,7 @@ def delete_expense(expense_id:int , db: Session = Depends(get_db)):
         return {"Message":"Records deleted"}
     return {"Message":"ID not available"}
 
+
 @app.post("/bank_account/",response_model=schemas.BankAccount)
 def create_bank_account( bank_account: schemas.BankAccountCreate,db: Session=Depends(get_db)):
     db_account = models.BankAccount(**bank_account.dict())
@@ -143,3 +143,4 @@ def create_category(category: schemas.CategoryCreate,db: Session= Depends(get_db
     db.commit()
     db.refresh(db_category)
     return db_category
+
