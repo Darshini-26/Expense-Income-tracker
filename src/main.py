@@ -19,7 +19,7 @@ def get_db():
         db.close()
 
 
-@app.post("/income/", response_model=schemas.Income)
+@app.post("/income/", tags=["INCOME"],response_model=schemas.Income)
 def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db_income = models.Income(**income.dict())
     db.add(db_income)
@@ -27,21 +27,22 @@ def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db.refresh(db_income)
     return db_income
 
-@app.get("/income/", response_model=List[schemas.Income])
+
+@app.get("/income/",tags=["INCOME"] ,response_model=List[schemas.Income])
 def read_income(db: Session = Depends(get_db)):
     db_income = db.query(models.Income).all()
     if not db_income:
         return []
     return db_income
 
-@app.get("/income/{income_id}", response_model=schemas.Income)
+@app.get("/income/{income_id}",tags=["INCOME"], response_model=schemas.Income)
 def read_income(income_id: int, db: Session = Depends(get_db)):
     db_income = db.query(models.Income).filter(models.Income.income_id==income_id).first()
     if not db_income:
         return []
     return db_income
 
-@app.put("/income/{income_id}", response_model=schemas.Income)
+@app.put("/income/{income_id}", tags=["INCOME"],response_model=schemas.Income)
 def update_income(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db_income = db.query(models.Income).filter(models.Income.income_id==income_id).first()
     db_income.user_id = income.user_id
@@ -53,7 +54,7 @@ def update_income(income_id: int, income: schemas.IncomeCreate, db: Session = De
     db.refresh(db_income)
     return db_income
 
-@app.delete("/income/{income_id}")
+@app.delete("/income/{income_id}",tags=["INCOME"])
 def delete_income(income_id:int , db: Session = Depends(get_db)):
     db_income = db.query(models.Income).filter(models.Income.income_id==income_id).first()
     if db_income:
@@ -63,7 +64,7 @@ def delete_income(income_id:int , db: Session = Depends(get_db)):
     return {"Message":"ID not available"}
 
 
-@app.post("/expense/", response_model=schemas.Expense)
+@app.post("/expense/",tags=["EXPENSE"], response_model=schemas.Expense)
 def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
     db_expense = models.Expense(**expense.dict())
     db.add(db_expense)
@@ -72,21 +73,21 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
     return db_expense
 
 
-@app.get("/expense/", response_model=List[schemas.Expense])
+@app.get("/expense/",tags=["EXPENSE"], response_model=List[schemas.Expense])
 def read_expense(db: Session = Depends(get_db)):
     db_expense = db.query(models.Expense).all()
     if not db_expense:
         return []
     return db_expense
 
-@app.get("/expense/{expense_id}", response_model=schemas.Expense)
+@app.get("/expense/{expense_id}", tags=["EXPENSE"],response_model=schemas.Expense)
 def read_expense(expense_id: int, db: Session = Depends(get_db)):
     db_expense = db.query(models.Expense).filter(models.Expense.expense_id==expense_id).first()
     if not db_expense:
         return []
     return db_expense
 
-@app.put("/expense/{expense_id}", response_model=schemas.Expense)
+@app.put("/expense/{expense_id}", tags=["EXPENSE"],response_model=schemas.Expense)
 def update_expense(expense_id: int, expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
     db_expense = db.query(models.Expense).filter(models.Expense.expense_id==expense_id).first()
     db_expense.user_id = expense.user_id
@@ -98,7 +99,7 @@ def update_expense(expense_id: int, expense: schemas.ExpenseCreate, db: Session 
     db.refresh(db_expense)
     return db_expense
 
-@app.delete("/expense/{expense_id}")
+@app.delete("/expense/{expense_id}", tags=["EXPENSE"])
 def delete_expense(expense_id:int , db: Session = Depends(get_db)):
     db_expense = db.query(models.Expense).filter(models.Expense.expense_id==expense_id).first()
     if db_expense:
@@ -108,7 +109,7 @@ def delete_expense(expense_id:int , db: Session = Depends(get_db)):
     return {"Message":"ID not available"}
 
 
-@app.post("/bank_account/",response_model=schemas.BankAccount)
+@app.post("/bank_account/", tags=["BANK ACCOUNT"],response_model=schemas.BankAccount)
 def create_bank_account( bank_account: schemas.BankAccountCreate,db: Session=Depends(get_db)):
     db_account = models.BankAccount(**bank_account.dict())
     db.add(db_account)
@@ -116,11 +117,11 @@ def create_bank_account( bank_account: schemas.BankAccountCreate,db: Session=Dep
     db.refresh(db_account)
     return db_account
 
-@app.get("/bank_accounts/{account_id}", response_model=schemas.BankAccount)
+@app.get("/bank_accounts/{account_id}",tags=["BANK ACCOUNT"], response_model=schemas.BankAccount)
 def read_bank_account( account_id: int,db: Session=Depends(get_db)):
     return db.query(schemas.BankAccount).filter(models.BankAccount.account_id == account_id).first()
 
-@app.put("/bank_accounts/{account_id}", response_model=schemas.BankAccount)
+@app.put("/bank_accounts/{account_id}", tags=["BANK ACCOUNT"],response_model=schemas.BankAccount)
 def update_bank_account(account_id: int, bank_account: schemas.BankAccountCreate,db: Session=Depends(get_db)):
     db_account = db.query(models.BankAccount).filter(models.BankAccount.account_id == account_id).first()
     for key, value in bank_account.dict().items():
@@ -129,18 +130,46 @@ def update_bank_account(account_id: int, bank_account: schemas.BankAccountCreate
     db.refresh(db_account)
     return db_account
 
-@app.delete("/bank_accounts/{account_id}")
+@app.delete("/bank_accounts/{account_id}",tags=["BANK ACCOUNT"])
 def delete_bank_account(account_id: int,db: Session=Depends(get_db) ):
     db_account = db.query(models.BankAccount).filter(models.BankAccount.account_id == account_id).first()
     db.delete(db_account)
     db.commit()
     return db_account
 
-@app.post("/categories/", response_model=schemas.Category)
+@app.post("/categories/",tags=["CATEGORY"], response_model=schemas.Category)
 def create_category(category: schemas.CategoryCreate,db: Session= Depends(get_db)):
     db_category = models.Category(**category.dict())
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
+    return db_category
+
+
+@app.get("/categories/",tags=["CATEGORY"],response_model=List[schemas.Category])
+def read_category(db:Session=Depends(get_db)):
+    db_category=db.query(models.Category).all()
+    if not db_category:
+        return[]
+    return db_category
+
+@app.put("/categories/{category_id}",tags=["CATEGORY"],response_model=schemas.Category)
+def update(category_id:int,category: schemas.CategoryCreate,db:Session=Depends(get_db)):
+    db_category=db.query(models.Category).filter(models.Category.category_id==category_id).first()
+    if not db_category:
+        return{"Category not found"}
+    db_category.user_id=category.user_id
+    db_category.category_type=category.category_type
+    db.commit()
+    db.refresh(db_category)
+    return db_category
+
+@app.delete("/categories/{category_id}",tags=["CATEGORY"])
+def delete_category(category_id:int,db:Session=Depends(get_db)):
+    db_category=db.query(models.Category).filter(models.Category.category_id==category_id).first()
+    if not db_category:
+        return{"Catgeory not found"}
+    db.delete(db_category)
+    db.commit()
     return db_category
 
