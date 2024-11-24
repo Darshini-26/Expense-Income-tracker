@@ -20,7 +20,7 @@ class Income(IncomeBase):
     income_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ExpenseBase(BaseModel):
@@ -38,7 +38,7 @@ class Expense(ExpenseBase):
     expense_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class BankAccountBase(BaseModel):
@@ -54,7 +54,7 @@ class BankAccount(BankAccountBase):
     account_id: int
 
     class Config:
-        orm_mode = True
+        from_attribites = True
         
 
 class CategoryBase(BaseModel):
@@ -68,5 +68,5 @@ class Category(CategoryBase):
     category_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
