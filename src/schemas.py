@@ -54,7 +54,7 @@ class BankAccount(BankAccountBase):
     account_id: int
 
     class Config:
-        from_attribites = True
+        from_attributes = True
         
 
 class CategoryBase(BaseModel):

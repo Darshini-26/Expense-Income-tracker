@@ -19,6 +19,14 @@ def get_db():
         db.close()
 
 
+@app.get("/test-db")
+def test_db_connection(db: Session = Depends(get_db)):
+    try:
+        db.query(models.Income).first()  # Simple query to test DB connection
+        return {"message": "Database connection successful!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
 # INCOME
 @app.post("/income/", tags=["INCOME"], response_model=schemas.Income)
 def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
@@ -27,6 +35,21 @@ def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_income)
     return db_income
+
+'''@app.post("/income/", tags=["INCOME"], response_model=schemas.Income)
+def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
+    try:
+        # Test the DB connection
+        db.query(models.Income).first()  # Simple query to check connection
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+    
+    db_income = models.Income(**income.dict())
+    db.add(db_income)
+    db.commit()
+    db.refresh(db_income)
+    return db_income'''
+
 
 
 @app.get("/income/", tags=["INCOME"], response_model=List[schemas.Income])
