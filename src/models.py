@@ -6,7 +6,7 @@ from datetime import datetime
 class Income(Base):
     __tablename__ = "incomes"
     
-    income_id = Column(Integer, primary_key=True, index=True)
+    income_id = Column(Integer, primary_key=True, index=True,autoincrement=True)
     user_id = Column(Integer, nullable=False)
     income_amt = Column(DECIMAL, nullable=False)
     date = Column(DateTime, default=datetime.now)
@@ -52,4 +52,7 @@ class Category(Base):
  
     expenses = relationship("Expense", back_populates="category")
     incomes = relationship("Income", back_populates="category")
+
+
+
 
