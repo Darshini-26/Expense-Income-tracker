@@ -7,9 +7,10 @@ import src.schemas as schemas
 from sqlalchemy.orm import Session
 from random import randint
 import uuid
-import csv
+import csv,io
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from fastapi.responses import StreamingResponse
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -431,3 +432,105 @@ def upload_to_s3(file_name, bucket_name,object_name=None):
         raise Exception("The file was not found")
     except NoCredentialsError:
         raise Exception("Credentials not available")
+
+@app.get("/download-data", response_class=StreamingResponse)
+def download_data(db: Session = Depends(get_db)):
+    """
+    Endpoint to download income and expense data as a CSV file.
+    """
+    # Query the database for income and expense data
+    incomes = db.query(models.Income).all()
+    expenses = db.query(models.Expense).all()
+
+    # Create an in-memory file to hold CSV data
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Write headers
+    writer.writerow(["Type", "Amount", "Date", "Description", "Account ID", "Category ID"])
+
+    # Write income data
+    for income in incomes:
+        writer.writerow([
+            "Income",
+            income.income_amt,
+            income.date,
+            income.description or "",
+            income.account_id,
+            income.category_id,
+        ])
+
+    # Write expense data
+    for expense in expenses:
+        writer.writerow([
+            "Expense",
+            expense.expense_amt,
+            expense.date,
+            expense.description or "",
+            expense.account_id,
+            expense.category_id,
+        ])
+
+    # Reset file pointer to the beginning
+    output.seek(0)
+
+    # Return the CSV as a streaming response
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=data.csv"},
+    )
+
+@app.get("/download-data_email", response_class=StreamingResponse)
+def download_data_email(
+    user_email: str = None,
+    db: Session = Depends(get_db),
+):
+    # Filter incomes and expenses based on provided parameters
+    incomes_query = db.query(models.Income)
+    expenses_query = db.query(models.Expense)
+
+    if user_email:
+        incomes_query = incomes_query.join(models.User).filter(models.User.email == user_email)
+        expenses_query = expenses_query.join(models.User).filter(models.User.email == user_email)
+
+    incomes = incomes_query.all()
+    expenses = expenses_query.all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Write headers
+    writer.writerow(["Type", "Amount", "Date", "Description", "Account ID", "Category ID"])
+
+    # Write income data
+    for income in incomes:
+        writer.writerow([
+            "Income",
+            income.income_amt,
+            income.date,
+            income.description or "",
+            income.account_id,
+            income.category_id,
+        ])
+
+    # Write expense data
+    for expense in expenses:
+        writer.writerow([
+            "Expense",
+            expense.expense_amt,
+            expense.date,
+            expense.description or "",
+            expense.account_id,
+            expense.category_id,
+        ])
+
+    # Reset file pointer to the beginning
+    output.seek(0)
+
+    # Return the CSV as a streaming response
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=data.csv"},
+    )
