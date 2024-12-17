@@ -7,7 +7,8 @@ import src.schemas as schemas
 from sqlalchemy.orm import Session
 from random import randint
 import uuid
-
+import csv
+from fastapi.responses import JSONResponse
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -66,11 +67,43 @@ def create_income(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
     db.refresh(db_income)
     return db_income
 
+import csv
+from fastapi.responses import JSONResponse
 
-@app.get("/income/", tags=["INCOME"], response_model=List[schemas.Income])
+BUCKET_NAME = "financial-tracker1"
+
+@app.get("/income/upload", tags=["INCOME"])
+def upload_income_data_to_s3(db: Session = Depends(get_db)):
+    incomes = db.query(models.Income).all()
+    file_name = "incomes.csv"
+    
+    # Write data to CSV file
+    with open(file_name, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["income_id", "income_amt", "date", "description", "account_id", "category_id"])
+        for income in incomes:
+            writer.writerow([
+                income.income_id,
+                #income.user_id,
+                income.income_amt,
+                income.date,
+                income.description,
+                income.account_id,
+                income.category_id,
+            ])
+    
+    # Upload to S3
+    try:
+        file_url = upload_to_s3(file_name, BUCKET_NAME)
+        return JSONResponse(content={"message": "File uploaded successfully", "file_url": file_url})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+'''@app.get("/income/", tags=["INCOME"], response_model=List[schemas.Income])
 def read_income(db: Session = Depends(get_db)):
     db_income = db.query(models.Income).all()
-    return db_income
+    return db_income'''
 
 
 @app.get("/income/{income_id}", tags=["INCOME"], response_model=schemas.Income)
@@ -138,13 +171,37 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
 
     return db_expense
 
+@app.get("/expense/upload", tags=["EXPENSE"])
+def upload_expense_data_to_s3(db: Session = Depends(get_db)):
+    expenses = db.query(models.Expense).all()
+    file_name = "expenses.csv"
+    
+    with open(file_name, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["expense_id",  "expense_amt", "date", "description", "account_id", "category_id"])
+        for expense in expenses:
+            writer.writerow([
+                expense.expense_id,
+                #expense.user_id,
+                expense.expense_amt,
+                expense.date,
+                expense.description,
+                expense.account_id,
+                expense.category_id,
+            ])
+    
+    try:
+        file_url = upload_to_s3(file_name, BUCKET_NAME)
+        return JSONResponse(content={"message": "File uploaded successfully", "file_url": file_url})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
-@app.get("/expense/", tags=["EXPENSE"], response_model=List[schemas.Expense])
+'''@app.get("/expense/", tags=["EXPENSE"], response_model=List[schemas.Expense])
 def read_expense(db: Session = Depends(get_db)):
     db_expense = db.query(models.Expense).all()
-    return db_expense
+    return db_expense'''
 
 
 @app.get("/expense/{expense_id}", tags=["EXPENSE"], response_model=schemas.Expense)
@@ -214,10 +271,36 @@ def create_bank_account(bank_account: schemas.BankAccountCreate, db: Session = D
     return db_account
 
 
-@app.get("/bank_account/", tags=["BANK ACCOUNT"], response_model=List[schemas.BankAccount])
+'''@app.get("/bank_account/", tags=["BANK ACCOUNT"], response_model=List[schemas.BankAccount])
 def read_bank_account(db: Session = Depends(get_db)):
     db_account = db.query(models.BankAccount).all()
-    return db_account
+    return db_account'''
+
+@app.get("/bank_accounts/upload", tags=["BANK ACCOUNT"])
+def upload_bank_accounts_to_s3(db: Session = Depends(get_db)):
+    bank_accounts = db.query(models.BankAccount).all()
+    file_name = "bank_accounts.csv"
+    
+    # Write data to CSV file
+    with open(file_name, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["account_id", "name_of_bank", "balance"])
+        for account in bank_accounts:
+            writer.writerow([
+                account.account_id,
+                #account.account_no,
+                account.name_of_bank,
+                account.balance,
+                #account.user_id,
+            ])
+    
+    # Upload to S3
+    try:
+        file_url = upload_to_s3(file_name, BUCKET_NAME)
+        return JSONResponse(content={"message": "File uploaded successfully", "file_url": file_url})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/bank_account/{account_id}", tags=["BANK ACCOUNT"], response_model=schemas.BankAccount)
@@ -262,11 +345,29 @@ def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_
     db.refresh(db_category)
     return db_category
 
+@app.get("/categories/upload",tags=["CATEGORY"])
+def upload_category_to_s3(db:Session=Depends(get_db)):
+    categories=db.query(models.Category).all()
+    file_name="categories.csv"
 
-@app.get("/categories/", tags=["CATEGORY"], response_model=List[schemas.Category])
+    with open(file_name, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["category_id", "category_type"])
+        for category in categories:
+            writer.writerow([
+                category.category_id,
+                category.category_type])
+                
+    try:
+        file_url = upload_to_s3(file_name, BUCKET_NAME)
+        return JSONResponse(content={"message": "File uploaded successfully", "file_url": file_url})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+'''@app.get("/categories/", tags=["CATEGORY"], response_model=List[schemas.Category])
 def read_category(db: Session = Depends(get_db)):
     db_category = db.query(models.Category).all()
-    return db_category
+    return db_category'''
 
 
 @app.get("/categories/{category_id}", tags=["CATEGORY"], response_model=schemas.Category)
@@ -298,3 +399,18 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
     db.delete(db_category)
     db.commit()
     return {"Message": "Records deleted"}
+
+import boto3
+from botocore.exceptions import NoCredentialsError
+
+def upload_to_s3(file_name, bucket_name,object_name=None):
+    s3_client = boto3.client('s3')
+    if object_name is None:
+        object_name = file_name
+    try:
+        s3_client.upload_file(file_name, bucket_name, object_name)
+        return f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
+    except FileNotFoundError:
+        raise Exception("The file was not found")
+    except NoCredentialsError:
+        raise Exception("Credentials not available")
