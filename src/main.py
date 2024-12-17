@@ -9,7 +9,7 @@ from random import randint
 import uuid
 import csv
 from fastapi.responses import JSONResponse
-
+from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -23,7 +23,24 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/")
+async def root():
+    return {"message": "FastAPI with SSM integration is working!"}
 
+@app.get("/test-db")
+def test_db_connection(db: Session = Depends(get_db)):
+    """
+    Simple endpoint to test database connection.
+    """
+    try:
+        # Execute a simple query to test connection
+        db.execute(text("SELECT 1"))
+        return {"status": "Database connection successful"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database connection failed: {str(e)}"
+        )
 
 @app.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
