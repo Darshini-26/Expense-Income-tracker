@@ -116,6 +116,7 @@ def upload_income_data_to_s3(db: Session = Depends(get_db)):
         return JSONResponse(content={"message": "File uploaded successfully", "file_url": file_url})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 
 '''@app.get("/income/", tags=["INCOME"], response_model=List[schemas.Income])
@@ -421,7 +422,7 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 import boto3
 from botocore.exceptions import NoCredentialsError
 
-def upload_to_s3(file_name, bucket_name,object_name=None):
+def upload_to_s3(file_name: str, bucket_name: str,object_name:str =None):
     s3_client = boto3.client('s3')
     if object_name is None:
         object_name = file_name
@@ -433,43 +434,46 @@ def upload_to_s3(file_name, bucket_name,object_name=None):
     except NoCredentialsError:
         raise Exception("Credentials not available")
 
+import io
+import pandas as pd
+from fastapi import Depends, APIRouter
+from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
+import src.models  # Assuming you have the necessary imports
+
 @app.get("/download-data", response_class=StreamingResponse)
 def download_data(db: Session = Depends(get_db)):
     """
-    Endpoint to download income and expense data as a CSV file.
+    Endpoint to download income and expense data as a CSV file using pandas without any loops.
     """
     # Query the database for income and expense data
     incomes = db.query(models.Income).all()
     expenses = db.query(models.Expense).all()
 
-    # Create an in-memory file to hold CSV data
+    # Directly convert SQLAlchemy query result into a pandas DataFrame
+    income_df = pd.read_sql(db.query(models.Income).statement, db.bind)
+    expense_df = pd.read_sql(db.query(models.Expense).statement, db.bind)
+
+    # Add "Type" column to differentiate income and expense rows
+    income_df['Type'] = 'Income'
+    expense_df['Type'] = 'Expense'
+
+    # Reorder columns to match the required CSV format
+    income_df = income_df[['Type', 'income_amt', 'date', 'description', 'account_id', 'category_id']]
+    expense_df = expense_df[['Type', 'expense_amt', 'date', 'description', 'account_id', 'category_id']]
+
+    # Rename columns to match the CSV headers
+    income_df.columns = ['Type', 'Amount', 'Date', 'Description', 'Account ID', 'Category ID']
+    expense_df.columns = ['Type', 'Amount', 'Date', 'Description', 'Account ID', 'Category ID']
+
+    # Concatenate both DataFrames
+    all_data_df = pd.concat([income_df, expense_df], ignore_index=True)
+
+    # Create an in-memory file for CSV data
     output = io.StringIO()
-    writer = csv.writer(output)
 
-    # Write headers
-    writer.writerow(["Type", "Amount", "Date", "Description", "Account ID", "Category ID"])
-
-    # Write income data
-    for income in incomes:
-        writer.writerow([
-            "Income",
-            income.income_amt,
-            income.date,
-            income.description or "",
-            income.account_id,
-            income.category_id,
-        ])
-
-    # Write expense data
-    for expense in expenses:
-        writer.writerow([
-            "Expense",
-            expense.expense_amt,
-            expense.date,
-            expense.description or "",
-            expense.account_id,
-            expense.category_id,
-        ])
+    # Write the DataFrame to the in-memory file as CSV
+    all_data_df.to_csv(output, index=False)
 
     # Reset file pointer to the beginning
     output.seek(0)
@@ -486,6 +490,10 @@ def download_data_email(
     user_email: str = None,
     db: Session = Depends(get_db),
 ):
+    """
+    Endpoint to download income and expense data filtered by email and
+    return it as a CSV file using pandas without any loops.
+    """
     # Filter incomes and expenses based on provided parameters
     incomes_query = db.query(models.Income)
     expenses_query = db.query(models.Expense)
@@ -494,36 +502,30 @@ def download_data_email(
         incomes_query = incomes_query.join(models.User).filter(models.User.email == user_email)
         expenses_query = expenses_query.join(models.User).filter(models.User.email == user_email)
 
-    incomes = incomes_query.all()
-    expenses = expenses_query.all()
+    # Directly convert SQLAlchemy query result into a pandas DataFrame
+    income_df = pd.read_sql(incomes_query.statement, db.bind)
+    expense_df = pd.read_sql(expenses_query.statement, db.bind)
 
+    # Add "Type" column to differentiate income and expense rows
+    income_df['Type'] = 'Income'
+    expense_df['Type'] = 'Expense'
+
+    # Reorder columns to match the required CSV format
+    income_df = income_df[['Type', 'income_amt', 'date', 'description', 'account_id', 'category_id']]
+    expense_df = expense_df[['Type', 'expense_amt', 'date', 'description', 'account_id', 'category_id']]
+
+    # Rename columns to match the CSV headers
+    income_df.columns = ['Type', 'Amount', 'Date', 'Description', 'Account ID', 'Category ID']
+    expense_df.columns = ['Type', 'Amount', 'Date', 'Description', 'Account ID', 'Category ID']
+
+    # Concatenate both DataFrames
+    all_data_df = pd.concat([income_df, expense_df], ignore_index=True)
+
+    # Create an in-memory file for CSV data
     output = io.StringIO()
-    writer = csv.writer(output)
 
-    # Write headers
-    writer.writerow(["Type", "Amount", "Date", "Description", "Account ID", "Category ID"])
-
-    # Write income data
-    for income in incomes:
-        writer.writerow([
-            "Income",
-            income.income_amt,
-            income.date,
-            income.description or "",
-            income.account_id,
-            income.category_id,
-        ])
-
-    # Write expense data
-    for expense in expenses:
-        writer.writerow([
-            "Expense",
-            expense.expense_amt,
-            expense.date,
-            expense.description or "",
-            expense.account_id,
-            expense.category_id,
-        ])
+    # Write the DataFrame to the in-memory file as CSV
+    all_data_df.to_csv(output, index=False)
 
     # Reset file pointer to the beginning
     output.seek(0)

@@ -1,21 +1,24 @@
-
-from src.aws_ssm import get_ssm_parameter  # Import the function from aws_ssm.py
+from src.aws_ssm import financialtracker_serveroverride  # Import the function from aws_ssm.py
 
 def get_database_url():
     """
     Retrieves the database URL from AWS SSM Parameter Store.
-    
+
     Returns:
         str: The database URL retrieved from the SSM parameter store.
     """
     try:
-        database_url = get_ssm_parameter('database-url')  # Call the imported function
-        if database_url is None:
-            raise RuntimeError("Failed to retrieve the database URL.")
-        return database_url
+        # Fetch the parameter value (which contains plain text)
+        parameter_value = financialtracker_serveroverride('/financialtracker/serveroverride')
+
+        # Parse the parameter value to find the DATABASE_URL
+        for line in parameter_value.splitlines():
+            if line.startswith('DATABASE_URL='):
+                # Extract the value after "DATABASE_URL="
+                database_url = line.split('=', 1)[1].strip()
+                return database_url
+        
+        # Raise an error if DATABASE_URL isn't found
+        raise RuntimeError("DATABASE_URL not found in the parameter value.")
     except Exception as e:
         raise RuntimeError(f"Error retrieving database URL: {e}")
-
-
-
-

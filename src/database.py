@@ -1,23 +1,24 @@
-from sqlalchemy import create_engine,text
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import src.config as config
 
-
-DATABASE_URL = config.get_ssm_parameter('database_url')
+# Retrieve the DATABASE_URL from config.py (via SSM)
+DATABASE_URL = config.get_database_url()  # This should call get_database_url() from config.py
 
 if not DATABASE_URL:
     raise RuntimeError("Failed to retrieve the database URL from SSM.")
 
 # Create the SQLAlchemy engine
-engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 10} )
+engine = create_engine(DATABASE_URL,
+    connect_args={"options": "-c statement_timeout=60000"} )
 
+# Test connection with a simple query
 with engine.connect() as connection:
     # Use `text` to mark the SQL query explicitly
     result = connection.execute(text("SELECT 1"))
     print(result.fetchone())
-    
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

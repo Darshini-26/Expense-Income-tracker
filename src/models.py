@@ -9,6 +9,10 @@ from sqlalchemy.dialects.postgresql import UUID
 def generate_account_no():
     return random.randint(10**15, 10**16 - 1)
 
+import secrets
+
+
+
 # User Table (Primary Table for User Information)
 class User(Base):
     __tablename__ = "users"
