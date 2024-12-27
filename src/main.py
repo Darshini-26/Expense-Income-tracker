@@ -7,6 +7,7 @@ import pandas as pd
 import boto3
 from botocore.exceptions import NoCredentialsError
 import uuid
+import io
 
 from src.database import SessionLocal, engine
 import src.models as models
