@@ -1,4 +1,4 @@
-from src.aws_ssm import financialtracker_serveroverride  # Import the function from aws_ssm.py
+from config.aws_ssm import financialtracker_serveroverride  # Import the function from aws_ssm.py
 
 def get_database_url():
     """
