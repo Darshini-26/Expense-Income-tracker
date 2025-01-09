@@ -2,35 +2,45 @@ from sqlalchemy.orm import Session
 from models.models import Income
 
 class IncomeRepository:
-    @staticmethod
-    def create_income(db: Session, income: Income) -> Income:
-        db.add(income)
-        db.commit()
-        db.refresh(income)
+    def __init__(self, session: Session):
+        self.session = session
+
+    def create_income(self, income: Income) -> Income:
+        """Create a new income record in the database."""
+        self.session.add(income)
+        self.session.commit()  # Commit the transaction
+        self.session.refresh(income)  # Refresh the instance to get the generated ID, etc.
         return income
 
-    @staticmethod
-    def get_income_by_id(db: Session, income_id: int) -> Income:
-        return db.query(Income).filter(Income.income_id == income_id).first()
-
-    @staticmethod
-    def get_all_incomes(db: Session):
-        return db.query(Income).all()
-
-    @staticmethod
-    def update_income(db: Session, income:Income) -> Income:
-        db.add(income)
-        db.commit()
-        db.refresh(income)
+    def get_income_by_id(self, income_id: int) -> Income:
+        """Get an income record by its ID."""
+        income = self.session.query(Income).filter(Income.income_id == income_id).first()
+        if income:
+            # Ensure the income instance is refreshed with the current session
+            self.session.refresh(income)
         return income
-    
-    # Delete an income record
-    @staticmethod
-    def delete_income(db: Session, income_id: int) -> bool:
-        db_income = db.query(Income).filter(Income.income_id == income_id).first()
+
+    def get_all_incomes(self):
+        """Get all income records."""
+        incomes = self.session.query(Income).all()
+        for income in incomes:
+            self.session.refresh(income)  # Ensure all incomes are fresh
+        return incomes
+
+    def update_income(self, income: Income) -> Income:
+        """Update an existing income record."""
+        # Attach the income to the session if it's detached
+        db_income = self.session.merge(income)
+        self.session.commit()  # Commit the transaction
+        self.session.refresh(db_income)  # Refresh the instance to get the updated data
+        return db_income
+
+    def delete_income(self, income_id: int) -> bool:
+        """Delete an income record by its ID."""
+        db_income = self.session.query(Income).filter(Income.income_id == income_id).first()
         
         if db_income:
-            db.delete(db_income)  # Delete the record
-            db.commit()  # Commit the changes to the database
-            return {"message": "Record deleted"}
-        # return False  # If income with the given ID was not found
+            self.session.delete(db_income)  # Delete the income record
+            self.session.commit()  # Commit the transaction to finalize the deletion
+            return True
+        return False  # Return False if no record with that ID was found

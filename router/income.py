@@ -1,35 +1,63 @@
-# router/income.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from service.income_service import IncomeService
-from config.database import get_db  # Assuming this is your database session
-from schemas.schemas import Income, IncomeCreate
 from typing import List
+from sqlalchemy.orm import Session
+from schemas.schemas import Income, IncomeCreate
+from service.income_service import IncomeService
+from config.database import get_db, SessionLocal
+from service.unit_of_work import UnitOfWork
 
-router = APIRouter( tags=["Income"])
+router = APIRouter(prefix="/income", tags=["Income"])
 
-@router.post("/income/",response_model=Income)
-def create_income(income:IncomeCreate, db: Session = Depends(get_db)):
+# Dependency to provide a Unit of Work
+def get_uow() -> UnitOfWork:
+    # Pass SessionLocal as a callable to create a new session for each request
+    return UnitOfWork(SessionLocal)
+
+# Fetch all Income records
+@router.get("/", response_model=List[Income])
+def get_all_income(uow: UnitOfWork = Depends(get_uow)):
     try:
-        return IncomeService.create_income_service(db, income)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return IncomeService.get_all_incomes_service(uow)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/income/{income_id}",response_model=Income)
-def read_income(income_id: int, db: Session = Depends(get_db)):
+# Fetch Income by ID
+@router.get("/{id}", response_model=Income)
+def get_income_by_id(id: int, uow: UnitOfWork = Depends(get_uow)):
     try:
-        return IncomeService.get_income_by_id_service(db, income_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        income = IncomeService.get_income_by_id_service(uow, id)  # Ensure the right parameter is passed
+        if not income:
+            raise HTTPException(status_code=404, detail="Income not found")
+        return income
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/incomes/",response_model=List[Income])
-def read_incomes(db: Session = Depends(get_db)):
-    return IncomeService.get_all_incomes_service(db)
+# Create a new Income record
+@router.post("/", response_model=Income)
+def create_income(income: IncomeCreate, uow: UnitOfWork = Depends(get_uow)):
+    try:
+        return IncomeService.create_income_service(uow, income)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/income/",response_model=Income)
-def update_incomes(income_id:int,income:IncomeCreate,db:Session=Depends(get_db)):
-    return IncomeService.update_income_service(db,income_id,income)
+# Update Income record by ID
+@router.put("/{id}", response_model=Income)
+def update_income(id: int, updated_income: IncomeCreate, uow: UnitOfWork = Depends(get_uow)):
+    try:
+        updated = IncomeService.update_income_service(uow, id, updated_income)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Income not found")
+        return updated
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/income/")
-def delete_incomes(income_id:int,db:Session=Depends(get_db)):
-    return IncomeService.delete_income_service(db,income_id)
+# Delete Income record by ID
+@router.delete("/{id}", response_model=dict)
+def delete_income(id: int, uow: UnitOfWork = Depends(get_uow)):
+    try:
+        success = IncomeService.delete_income_service(uow, id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Income not found")
+        return {"message": "Income deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

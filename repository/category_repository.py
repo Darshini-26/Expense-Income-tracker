@@ -2,34 +2,42 @@ from sqlalchemy.orm import Session
 from models.models import Category
 
 class CategoryRepository:
-    @staticmethod
-    def create_category(db: Session, category: Category) -> Category:
-        db.add(category)
-        db.commit()
-        db.refresh(category)
+    def __init__(self, session: Session):
+        self.session = session
+
+    def create_category(self, category: Category) -> Category:
+        """Creates a new category in the database."""
+        self.session.add(category)
+        self.session.commit()  # Commit the transaction to save the category
+        self.session.refresh(category)  # Refresh the category to get the generated ID, etc.
         return category
 
-    @staticmethod
-    def get_category_by_id(db: Session, category_id: int) -> Category:
-        return db.query(Category).filter(Category.category_id == category_id).first()
+    def get_category_by_id(self, category_id: int) -> Category:
+        """Fetches a category by its ID."""
+        return self.session.query(Category).filter(Category.category_id == category_id).first()
 
-    @staticmethod
-    def get_all_categories(db: Session):
-        return db.query(Category).all()
+    def get_all_categories(self):
+        """Fetches all categories."""
+        return self.session.query(Category).all()
 
-    @staticmethod
-    def update_category(db: Session, category: Category) -> Category:
-        db.add(category)
-        db.commit()
-        db.refresh(category)
+    def get_category_by_name(self, name: str) -> Category:
+        """Fetches a category by its name."""
+        return self.session.query(Category).filter(Category.name == name).first()
+
+    def update_category(self, category: Category) -> Category:
+        """Updates an existing category."""
+        self.session.merge(category)  # Merge the updated category into the session
+        self.session.commit()  # Commit the transaction to save the changes
+        self.session.refresh(category)  # Refresh the category to get the updated data
         return category
 
-    @staticmethod
-    def delete_category(db: Session, category_id: int) -> bool:
-        db_category = db.query(Category).filter(Category.category_id == category_id).first()
+    def delete_category(self, category_id: int) -> dict:
+        """Deletes a category by its ID."""
+        db_category = self.session.query(Category).filter(Category.category_id == category_id).first()
         
         if db_category:
-            db.delete(db_category)  # Delete the record
-            db.commit()  # Commit the changes to the database
+            self.session.delete(db_category)  # Delete the category from the session
+            self.session.commit()  # Commit the transaction to finalize the deletion
             return {"message": "Category deleted successfully"}
-        return False  # If category with the given ID was not found
+        
+        return {"message": "Category not found"}  # Return a message if no category found

@@ -1,35 +1,63 @@
-# router/expense.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from service.expense_service import ExpenseService
-from config.database import get_db  # Assuming this is your database session
-from schemas.schemas import Expense, ExpenseCreate
 from typing import List
+from sqlalchemy.orm import Session
+from schemas.schemas import Expense, ExpenseCreate
+from service.expense_service import ExpenseService
+from config.database import get_db, SessionLocal
+from service.unit_of_work import UnitOfWork
 
-router = APIRouter(tags=["Expense"])
+router = APIRouter(prefix="/expense", tags=["Expense"])
 
-@router.post("/expense/", response_model=Expense)
-def create_expense(expense: ExpenseCreate, db: Session = Depends(get_db)):
+# Dependency to provide a Unit of Work
+def get_uow() -> UnitOfWork:
+    # Pass SessionLocal as a callable to create a new session for each request
+    return UnitOfWork(SessionLocal)
+
+# Fetch all Expense records
+@router.get("/", response_model=List[Expense])
+def get_all_expenses(uow: UnitOfWork = Depends(get_uow)):
     try:
-        return ExpenseService.create_expense_service(db, expense)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return ExpenseService.get_all_expenses_service(uow)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/expense/{expense_id}", response_model=Expense)
-def read_expense(expense_id: int, db: Session = Depends(get_db)):
+# Fetch Expense by ID
+@router.get("/{id}", response_model=Expense)
+def get_expense_by_id(id: int, uow: UnitOfWork = Depends(get_uow)):
     try:
-        return ExpenseService.get_expense_by_id_service(db, expense_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        expense = ExpenseService.get_expense_by_id_service(uow, id)  # Ensure the right parameter is passed
+        if not expense:
+            raise HTTPException(status_code=404, detail="Expense not found")
+        return expense
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/expenses/", response_model=List[Expense])
-def read_expenses(db: Session = Depends(get_db)):
-    return ExpenseService.get_all_expenses_service(db)
+# Create a new Expense record
+@router.post("/", response_model=Expense)
+def create_expense(expense: ExpenseCreate, uow: UnitOfWork = Depends(get_uow)):
+    try:
+        return ExpenseService.create_expense_service(uow, expense)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/expense/", response_model=Expense)
-def update_expenses(expense_id: int, expense: ExpenseCreate, db: Session = Depends(get_db)):
-    return ExpenseService.update_expense_service(db, expense_id, expense)
+# Update Expense record by ID
+@router.put("/{id}", response_model=Expense)
+def update_expense(id: int, updated_expense: ExpenseCreate, uow: UnitOfWork = Depends(get_uow)):
+    try:
+        updated = ExpenseService.update_expense_service(uow, id, updated_expense)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Expense not found")
+        return updated
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/expense/")
-def delete_expenses(expense_id: int, db: Session = Depends(get_db)):
-    return ExpenseService.delete_expense_service(db, expense_id)
+# Delete Expense record by ID
+@router.delete("/{id}", response_model=dict)
+def delete_expense(id: int, uow: UnitOfWork = Depends(get_uow)):
+    try:
+        success = ExpenseService.delete_expense_service(uow, id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Expense not found")
+        return {"message": "Expense deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

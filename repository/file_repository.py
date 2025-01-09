@@ -1,22 +1,26 @@
 import pandas as pd
 from sqlalchemy.orm import Session
-from models.models import Income, Expense
+from repository.income_repository import IncomeRepository
+from repository.expense_repository import ExpenseRepository
 
-def generate_csv_from_data(db: Session) -> pd.DataFrame:
+def generate_csv_from_data(uow, db: Session) -> pd.DataFrame:
     """
     Generates a CSV DataFrame for income and expense data.
 
     Args:
+        uow (UnitOfWork): The unit of work that provides access to the session.
         db (Session): The database session.
 
     Returns:
         pd.DataFrame: The CSV-formatted data for income and expenses.
     """
-    # Query the database for income and expense data
-    incomes = db.query(Income).all()
-    expenses = db.query(Expense).all()
+    # Fetch income and expense data within the scope of a Unit of Work
+    with uow:
+        # Use repositories to fetch data
+        income_data = IncomeRepository(uow.session).get_all_incomes(db)
+        expense_data = ExpenseRepository(uow.session).get_all_expenses(db)
 
-    # Directly convert SQLAlchemy query result into a pandas DataFrame
+    # Convert SQLAlchemy query results into pandas DataFrames
     income_df = pd.read_sql(db.query(Income).statement, db.bind)
     expense_df = pd.read_sql(db.query(Expense).statement, db.bind)
 
@@ -32,7 +36,7 @@ def generate_csv_from_data(db: Session) -> pd.DataFrame:
     income_df.columns = ['Type', 'Amount', 'Date', 'Description', 'Account ID', 'Category ID']
     expense_df.columns = ['Type', 'Amount', 'Date', 'Description', 'Account ID', 'Category ID']
 
-    # Concatenate both DataFrames
+    # Concatenate both DataFrames into one
     all_data_df = pd.concat([income_df, expense_df], ignore_index=True)
 
     return all_data_df

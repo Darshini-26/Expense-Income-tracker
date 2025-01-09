@@ -1,16 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
+from service.download_service import download_incomes_expenses_as_csv  # Import the service function
+from service.unit_of_work import UnitOfWork
+from sqlalchemy.orm import sessionmaker
+from typing import Callable
 from sqlalchemy.orm import Session
-from service.file_service import  download_data_as_csv
-from config.database import get_db
+from config.database import engine  # Assuming engine is set up for database connection
 
-router = APIRouter(tags=["File"])
+router = APIRouter(tags=['Download'])
 
-@router.get("/download_csv/")
-def download_data_as_csv_route(db: Session = Depends(get_db)):
-    """
-    Downloads income and expense data as a CSV file.
-    """
-    try:
-        return download_data_as_csv(db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Dependency to get the session factory
+def get_session_factory():
+    SessionFactory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return SessionFactory
+
+# Endpoint to download incomes and expenses as CSV
+@router.get("/download/csv")
+def download_csv(session_factory: Callable[[], Session] = Depends(get_session_factory)):
+    with UnitOfWork(session_factory) as uow:
+        return download_incomes_expenses_as_csv(uow)
+
