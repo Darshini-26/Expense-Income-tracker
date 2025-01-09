@@ -5,6 +5,15 @@ class ExpenseRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    def get_all(self):
+        """
+        Fetch all income records from the database.
+
+        Returns:
+            list: A list of Income objects.
+        """
+        return self.session.query(Expense).all()
+
     def create_expense(self, expense: Expense) -> Expense:
         self.session.add(expense)  # Use self.session instead of requiring db as an argument
         self.session.commit()

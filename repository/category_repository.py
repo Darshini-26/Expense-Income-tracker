@@ -5,6 +5,15 @@ class CategoryRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    def get_all(self):
+        """
+        Fetch all income records from the database.
+
+        Returns:
+            list: A list of Income objects.
+        """
+        return self.session.query(Category).all()
+
     def create_category(self, category: Category) -> Category:
         """Creates a new category in the database."""
         self.session.add(category)

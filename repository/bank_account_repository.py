@@ -5,6 +5,15 @@ class BankAccountRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    def get_all(self):
+        """
+        Fetch all income records from the database.
+
+        Returns:
+            list: A list of Income objects.
+        """
+        return self.session.query(BankAccount).all()
+
     def create_bank_account(self, bank_account: BankAccount) -> BankAccount:
         """Creates a new bank account in the database."""
         self.session.add(bank_account)

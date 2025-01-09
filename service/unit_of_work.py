@@ -33,6 +33,7 @@ class UnitOfWorkBase(ABC):
 
 
 # Concrete Unit of Work Implementation
+
 class UnitOfWork(UnitOfWorkBase):
     def __init__(self, session_factory: Callable[[], Session]) -> None:
         self._session_factory = session_factory
@@ -48,7 +49,7 @@ class UnitOfWork(UnitOfWorkBase):
         self.expenses = ExpenseRepository(self._session)
         self.bank_accounts = BankAccountRepository(self._session)
         self.categories = CategoryRepository(self._session)
-        return super().__enter__()
+        return super().__enter__() # Returning self ensures that the repositories are accessible
 
     def commit(self):
         """Commit the current transaction."""
