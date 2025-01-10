@@ -11,9 +11,9 @@ def get_uow(db: Session = Depends(get_db)):
     return UnitOfWork(db)
 
 @router.post("/user/")
-def create_user(name: str, email: str, password: str, uow: UnitOfWork = Depends(get_uow)):
+def create_user(name: str, email: str,  uow: UnitOfWork = Depends(get_uow)):
     try:
-        return create_user_service(uow, name, email, password)
+        return create_user_service(uow, name, email)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

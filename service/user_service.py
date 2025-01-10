@@ -5,18 +5,17 @@ from utils.user_utils import create_new_user
 from models.models import User
 from .unit_of_work import UnitOfWork
 
-def create_user_service(uow: UnitOfWork,db: Session, name: str, email: str, password: str) -> User:
+def create_user_service(uow: UnitOfWork,db: Session, name: str, email: str) -> User:
     """Handles business logic for creating a new user."""
     with uow:
-        if not name or not email or not password:
-            raise ValueError("All fields must be provided.")
+
     
         existing_user = UserRepository.find_user_by_email(db, email)
         if existing_user:
             raise ValueError("User already exists.")
     
     # Create user using utility function
-        user = create_new_user(db, name, email, password)
+        user = create_new_user(db, name, email)
         return user
 
 def get_user_by_email_service(uow: UnitOfWork,db: Session, email: str) -> User:
