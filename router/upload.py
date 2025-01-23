@@ -5,6 +5,8 @@ from service.upload_service import upload_data_to_s3
 from models import models
 from typing import List
 from config.database import get_db, SessionLocal 
+from auth.auth import JWTBearer
+
 
 router = APIRouter(tags=["Upload"])
 
@@ -12,7 +14,7 @@ router = APIRouter(tags=["Upload"])
 def get_uow() -> UnitOfWork:
     return UnitOfWork(SessionLocal)  # Provide session to UOW
 
-@router.get("/income/upload")
+@router.get("/income/upload",dependencies= [Depends(JWTBearer())])
 def upload_income_data_to_s3(uow: UnitOfWork = Depends(get_uow)):
     
     try:
@@ -25,7 +27,7 @@ def upload_income_data_to_s3(uow: UnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=500, detail=str(e))
     
     
-@router.get("/expense/upload")
+@router.get("/expense/upload",dependencies= [Depends(JWTBearer())])
 def upload_expense_data_to_s3(uow: UnitOfWork = Depends(get_uow)):
     """
     Uploads expense data as a CSV file to an S3 bucket.
@@ -39,7 +41,7 @@ def upload_expense_data_to_s3(uow: UnitOfWork = Depends(get_uow)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/bank_accounts/upload")
+@router.get("/bank_accounts/upload",dependencies= [Depends(JWTBearer())])
 def upload_bank_accounts_to_s3(uow: UnitOfWork = Depends(get_uow)):
     """
     Uploads all bank accounts to S3 in a CSV format.
@@ -54,7 +56,7 @@ def upload_bank_accounts_to_s3(uow: UnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/categories/upload")
+@router.get("/categories/upload",dependencies= [Depends(JWTBearer())])
 def upload_category_to_s3(uow: UnitOfWork = Depends(get_uow)):
     """
     Uploads all categories to S3 in CSV format.

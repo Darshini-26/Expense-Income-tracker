@@ -9,7 +9,7 @@ def get_database_url():
     """
     try:
         # Fetch the parameter value (which contains plain text)
-        parameter_value = financialtracker_serveroverride('/financialtracker/serveroverride')
+        parameter_value = financialtracker_serveroverride('/auth_financialtracker/serveroverride')
 
         # Parse the parameter value to find the DATABASE_URL
         for line in parameter_value.splitlines():

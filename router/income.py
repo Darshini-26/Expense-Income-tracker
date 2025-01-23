@@ -5,6 +5,7 @@ from schemas.schemas import Income, IncomeCreate
 from service.income_service import IncomeService
 from config.database import get_db, SessionLocal
 from service.unit_of_work import UnitOfWork
+from auth.auth import JWTBearer
 
 router = APIRouter(prefix="/income", tags=["Income"])
 
@@ -14,7 +15,7 @@ def get_uow() -> UnitOfWork:
     return UnitOfWork(SessionLocal)
 
 # Fetch all Income records
-@router.get("/", response_model=List[Income])
+@router.get("/", response_model=List[Income],dependencies= [Depends(JWTBearer())])
 def get_all_income(uow: UnitOfWork = Depends(get_uow)):
     try:
         return IncomeService.get_all_incomes_service(uow)
@@ -22,7 +23,7 @@ def get_all_income(uow: UnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Fetch Income by ID
-@router.get("/{id}", response_model=Income)
+@router.get("/{id}", response_model=Income,dependencies= [Depends(JWTBearer())])
 def get_income_by_id(id: int, uow: UnitOfWork = Depends(get_uow)):
     try:
         income = IncomeService.get_income_by_id_service(uow, id)  # Ensure the right parameter is passed
@@ -33,7 +34,7 @@ def get_income_by_id(id: int, uow: UnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Create a new Income record
-@router.post("/", response_model=Income)
+@router.post("/", response_model=Income,dependencies= [Depends(JWTBearer())])
 def create_income(income: IncomeCreate, uow: UnitOfWork = Depends(get_uow)):
     try:
         return IncomeService.create_income_service(uow, income)
@@ -41,7 +42,7 @@ def create_income(income: IncomeCreate, uow: UnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Update Income record by ID
-@router.put("/{id}", response_model=Income)
+@router.put("/{id}", response_model=Income,dependencies= [Depends(JWTBearer())])
 def update_income(id: int, updated_income: IncomeCreate, uow: UnitOfWork = Depends(get_uow)):
     try:
         updated = IncomeService.update_income_service(uow, id, updated_income)
@@ -52,7 +53,7 @@ def update_income(id: int, updated_income: IncomeCreate, uow: UnitOfWork = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 # Delete Income record by ID
-@router.delete("/{id}", response_model=dict)
+@router.delete("/{id}", response_model=dict,dependencies= [Depends(JWTBearer())])
 def delete_income(id: int, uow: UnitOfWork = Depends(get_uow)):
     try:
         success = IncomeService.delete_income_service(uow, id)

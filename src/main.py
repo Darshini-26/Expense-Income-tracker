@@ -7,6 +7,8 @@ from router.expense import router as expense_router
 from router.bank_account_routes import router as bank_account_router
 from router.download import router as download_router
 from router.upload import router as upload_router
+from router.auth_router import router as auth_router
+
 
 app = FastAPI()
 
@@ -18,3 +20,5 @@ app.include_router(expense_router)
 app.include_router(bank_account_router)
 app.include_router(category_router)
 app.include_router(download_router)
+
+app.include_router(auth_router, tags=["Authentication"])

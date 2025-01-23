@@ -13,7 +13,11 @@ if not DATABASE_URL:
 # Create the SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"options": "-c statement_timeout=60000"}
+    pool_size=10,              # Number of connections in the pool
+    max_overflow=20,           # Extra connections beyond the pool size
+    pool_timeout=30,           # Timeout for getting a connection from the pool
+    pool_recycle=3600,         # Recycle connections every hour to avoid stale connections
+    connect_args={"connect_timeout": 30}  # Connection timeout in seconds
 )
 
 # Test connection with a simple query

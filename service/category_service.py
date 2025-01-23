@@ -10,19 +10,20 @@ class CategoryService:
     def create_category_service(uow: UnitOfWork, category: CategoryCreate) -> Category:
         """Handles business logic for creating a new category."""
         with uow:
-            # Check for duplicate category names using the repository
-            existing_category = uow.categories.get_category_by_name(category.name)
-            if existing_category:
-                raise HTTPException(status_code=400, detail="Category with this name already exists")
-
-            # Prepare Category object
-            db_category = Category(name=category.name, description=category.description)
+            # Prepare Category object with specific category_id for "Income" and "Expense"
+            if category.category_type == "Income":
+                db_category = Category(category_id=1, category_type=category.category_type)
+            elif category.category_type == "Expense":
+                db_category = Category(category_id=2, category_type=category.category_type)
+            else:
+                db_category = Category(category_type=category.category_type)
 
             # Use repository to create category
             created_category = uow.categories.create_category(db_category)
 
             uow.commit()  # Commit the transaction after creation
             return created_category
+
 
     @staticmethod
     def get_category_by_id_service(uow: UnitOfWork, category_id: int) -> Category:
@@ -52,8 +53,7 @@ class CategoryService:
                 raise HTTPException(status_code=404, detail="Category not found")
 
             # Update the category fields
-            db_category.name = category.name
-            db_category.description = category.description
+            db_category.category_type = category.category_type
 
             # Use the repository to update the category
             updated_category = uow.categories.update_category(db_category)

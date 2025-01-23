@@ -3,32 +3,31 @@ from typing import Optional, Union
 from pydantic import BaseModel, EmailStr, root_validator
 import uuid
 
+class Login(BaseModel):
+    name: str
+    password: str
 
-# User Models
+
 class UserBase(BaseModel):
     name: str
     email: EmailStr
 
-
 class UserCreate(UserBase):
-    pass
+    password: str  # Include password only for user creation
 
-
-class User(UserBase):
+class UserResponse(UserBase):
     user_id: uuid.UUID
 
     class Config:
         from_attributes = True
 
 
-# Income Models
 class IncomeBase(BaseModel):
     income_amt: float
     date: datetime
     description: Optional[Union[str, None]] = None
     account_id: int
     category_id: int = 1
-
 
 class IncomeCreate(BaseModel):
     name_of_bank: str
@@ -37,22 +36,17 @@ class IncomeCreate(BaseModel):
     description: Optional[Union[str, None]] = None
     category_id: int = 1
 
-
 class Income(IncomeBase):
     income_id: int
-
     class Config:
         from_attributes = True
 
-
-# Expense Models
 class ExpenseBase(BaseModel):
     expense_amt: float
     date: datetime
     description: Optional[str] = None
     account_id: int
     category_id: int = 2
-
 
 class ExpenseCreate(BaseModel):
     name_of_bank: str
@@ -61,37 +55,27 @@ class ExpenseCreate(BaseModel):
     description: Optional[str] = None
     category_id: int = 2
 
-
 class Expense(ExpenseBase):
     expense_id: int
-
     class Config:
         from_attributes = True
 
-
-# Bank Account Models
 class BankAccountBase(BaseModel):
     balance: float
     name_of_bank: str
 
-
 class BankAccountCreate(BaseModel):
     balance: float
     name_of_bank: str
-    email: str
-
+    #user_id: uuid.UUID  # Reference user ID instead of email
 
 class BankAccount(BankAccountBase):
     account_id: int
-
     class Config:
         from_attributes = True
 
-
-# Category Models
 class CategoryBase(BaseModel):
     category_type: str
-
 
 class CategoryCreate(BaseModel):
     category_type: str
@@ -103,9 +87,7 @@ class CategoryCreate(BaseModel):
             raise ValueError("category_type must be either 'Income' or 'Expense'")
         return values
 
-
 class Category(CategoryBase):
     category_id: int
-
     class Config:
         from_attributes = True

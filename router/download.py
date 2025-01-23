@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from typing import Callable
 from sqlalchemy.orm import Session
 from config.database import engine  # Assuming engine is set up for database connection
+from auth.auth import JWTBearer
 
 router = APIRouter(tags=['Download'])
 
@@ -15,7 +16,7 @@ def get_session_factory():
     return SessionFactory
 
 # Endpoint to download incomes and expenses as CSV
-@router.get("/download/csv")
+@router.get("/download/csv",dependencies= [Depends(JWTBearer())])
 def download_csv(session_factory: Callable[[], Session] = Depends(get_session_factory)):
     with UnitOfWork(session_factory) as uow:
         return download_incomes_expenses_as_csv(uow)

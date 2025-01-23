@@ -5,6 +5,7 @@ from config.database import get_db, SessionLocal
 from schemas.schemas import Category, CategoryCreate
 from typing import List
 from service.unit_of_work import UnitOfWork
+from auth.auth import JWTBearer
 
 router = APIRouter(prefix="/categories", tags=["Category"])
 
@@ -13,7 +14,7 @@ def get_uow() -> UnitOfWork:
     return UnitOfWork(SessionLocal)
 
 # Create a new Category
-@router.post("/", response_model=Category)
+@router.post("/", response_model=Category,dependencies= [Depends(JWTBearer())])
 def create_category(category: CategoryCreate, uow: UnitOfWork = Depends(get_uow)):
     try:
         return CategoryService.create_category_service(uow, category)
@@ -21,7 +22,7 @@ def create_category(category: CategoryCreate, uow: UnitOfWork = Depends(get_uow)
         raise HTTPException(status_code=400, detail=str(e))
 
 # Fetch Category by ID
-@router.get("/{category_id}", response_model=Category)
+@router.get("/{category_id}", response_model=Category,dependencies= [Depends(JWTBearer())])
 def read_category(category_id: int, uow: UnitOfWork = Depends(get_uow)):
     try:
         return CategoryService.get_category_by_id_service(uow, category_id)
@@ -29,12 +30,12 @@ def read_category(category_id: int, uow: UnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=404, detail=str(e))
 
 # Fetch all Categories
-@router.get("/", response_model=List[Category])
+@router.get("/", response_model=List[Category],dependencies= [Depends(JWTBearer())])
 def read_categories(uow: UnitOfWork = Depends(get_uow)):
     return CategoryService.get_all_categories_service(uow)
 
 # Update Category by ID
-@router.put("/{category_id}", response_model=Category)
+@router.put("/{category_id}", response_model=Category,dependencies= [Depends(JWTBearer())])
 def update_category(category_id: int, category: CategoryCreate, uow: UnitOfWork = Depends(get_uow)):
     try:
         return CategoryService.update_category_service(uow, category_id, category)
@@ -42,7 +43,7 @@ def update_category(category_id: int, category: CategoryCreate, uow: UnitOfWork 
         raise HTTPException(status_code=400, detail=str(e))
 
 # Delete Category by ID
-@router.delete("/{category_id}", response_model=dict)
+@router.delete("/{category_id}", response_model=dict,dependencies= [Depends(JWTBearer())])
 def delete_category(category_id: int, uow: UnitOfWork = Depends(get_uow)):
     try:
         success = CategoryService.delete_category_service(uow, category_id)

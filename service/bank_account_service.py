@@ -8,12 +8,13 @@ from .unit_of_work import UnitOfWork
 
 class BankAccountService:
     @staticmethod
-    def create_bank_account_service(uow: UnitOfWork, bank_account: BankAccountCreate) -> BankAccount:
+    def create_bank_account_service(uow: UnitOfWork, bank_account: BankAccountCreate, user_id: str) -> BankAccount:
         """Create a new bank account."""
         with uow:
-            user = uow._session.query(User).filter(User.email == bank_account.email).first()
+            # Fetch the user by user_id
+            user = uow._session.query(User).filter(User.user_id == user_id).first()
             if not user:
-                raise HTTPException(status_code=404, detail="User with the provided email does not exist")
+                raise HTTPException(status_code=404, detail="User not found")
             
             # Check for duplicate bank names for the user
             existing_bank = (
@@ -30,17 +31,18 @@ class BankAccountService:
                 if not uow._session.query(BankAccount).filter(BankAccount.account_no == account_no).first():
                     break
             
-            # Create a new bank account record
+            # Create the new bank account
             db_account = BankAccount(
                 balance=bank_account.balance,
                 name_of_bank=bank_account.name_of_bank,
                 account_no=account_no,
-                user_id=user.user_id
+                user_id=user.user_id  # This associates the bank account with the user
             )
+            # Save the bank account to the database
             created_account = uow.bank_accounts.create_bank_account(db_account)
             uow.commit()
             return created_account
-
+        
     @staticmethod
     def get_bank_account_by_id_service(uow: UnitOfWork, account_id: int) -> BankAccount:
         """Fetch a bank account by ID."""
