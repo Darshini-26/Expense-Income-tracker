@@ -5,6 +5,8 @@ from schemas.schemas import ExpenseCreate
 from .unit_of_work import UnitOfWork
 
 
+from decimal import Decimal
+
 class ExpenseService:
     @staticmethod
     def create_expense_service(uow: UnitOfWork, expense: ExpenseCreate) -> Expense:
@@ -30,9 +32,16 @@ class ExpenseService:
                 category_id=expense.category_id,
             )
 
-            # Use the repository to create expense (no session argument needed)
+            # Update the bank account balance
+            bank_account.balance -= Decimal(expense.expense_amt)
+            uow._session.add(bank_account)
+
+            # Use the repository to create expense
             created_expense = expense_repo.create_expense(db_expense)
- # Just pass the expense object
+
+            # Commit the transaction
+            uow.commit()
+
             return created_expense
 
     @staticmethod
@@ -82,6 +91,11 @@ class ExpenseService:
             if not bank_account:
                 raise HTTPException(status_code=404, detail="Bank account not found")
 
+            # Update the bank account balance
+            bank_account.balance += db_expense.expense_amt  # Revert the old expense amount
+            bank_account.balance -= Decimal(expense.expense_amt)  # Apply the new expense amount
+            uow._session.add(bank_account)
+
             # Update the fields
             db_expense.expense_amt = expense.expense_amt
             db_expense.date = expense.date
@@ -91,6 +105,10 @@ class ExpenseService:
 
             # Use the repository to update the expense
             updated_expense = expense_repo.update_expense(db_expense)
+
+            # Commit the transaction
+            uow.commit()
+
             return updated_expense
 
     @staticmethod
@@ -100,10 +118,28 @@ class ExpenseService:
             # Access the repository directly from UnitOfWork
             expense_repo = uow.expenses
 
+            # Fetch the expense record
+            db_expense = expense_repo.get_expense_by_id(expense_id)
+
+            if not db_expense:
+                raise HTTPException(status_code=404, detail="Expense not found")
+
+            # Update the bank account balance
+            bank_account = uow._session.query(BankAccount).filter(
+                BankAccount.account_id == db_expense.account_id
+            ).first()
+
+            if bank_account:
+                bank_account.balance += db_expense.expense_amt
+                uow._session.add(bank_account)
+
             # Use the repository to delete the expense
             success = expense_repo.delete_expense(expense_id)
 
             if not success:
                 raise HTTPException(status_code=404, detail="Expense not found")
+
+            # Commit the transaction
+            uow.commit()
 
             return {"message": "Expense deleted successfully"}

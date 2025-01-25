@@ -50,7 +50,6 @@ class Income(Base):
     category = relationship("Category", back_populates="incomes")
 
 
-# Expense Table
 class Expense(Base):
     __tablename__ = "expenses"
 

@@ -5,6 +5,8 @@ from schemas.schemas import IncomeCreate
 from .unit_of_work import UnitOfWork
 
 
+from decimal import Decimal
+
 class IncomeService:
     @staticmethod
     def create_income_service(uow: UnitOfWork, income: IncomeCreate) -> Income:
@@ -30,8 +32,16 @@ class IncomeService:
                 category_id=income.category_id,
             )
 
-            # Use the repository to create income (no session argument needed)
-            created_income = income_repo.create_income(db_income)  # Just pass the income object
+            # Update the bank account balance
+            bank_account.balance += Decimal(income.income_amt)
+            uow._session.add(bank_account)
+
+            # Use the repository to create income
+            created_income = income_repo.create_income(db_income)
+
+            # Commit the transaction
+            uow.commit()
+
             return created_income
         
     @staticmethod
@@ -61,6 +71,7 @@ class IncomeService:
             return incomes
 
     @staticmethod
+    @staticmethod
     def update_income_service(uow: UnitOfWork, income_id: int, income: IncomeCreate):
         """Handles business logic for updating an income record."""
         with uow:
@@ -81,6 +92,11 @@ class IncomeService:
             if not bank_account:
                 raise HTTPException(status_code=404, detail="Bank account not found")
 
+            # Update the bank account balance
+            bank_account.balance -= db_income.income_amt  # Revert the old income amount
+            bank_account.balance += Decimal(income.income_amt)  # Apply the new income amount
+            uow._session.add(bank_account)
+
             # Update the fields
             db_income.income_amt = income.income_amt
             db_income.date = income.date
@@ -90,6 +106,10 @@ class IncomeService:
 
             # Use the repository to update the income
             updated_income = income_repo.update_income(db_income)
+
+            # Commit the transaction
+            uow.commit()
+
             return updated_income
 
     @staticmethod
@@ -99,10 +119,28 @@ class IncomeService:
             # Access the repository directly from UnitOfWork
             income_repo = uow.incomes
 
+            # Fetch the income record
+            db_income = income_repo.get_income_by_id(income_id)
+
+            if not db_income:
+                raise HTTPException(status_code=404, detail="Income not found")
+
+            # Update the bank account balance
+            bank_account = uow._session.query(BankAccount).filter(
+                BankAccount.account_id == db_income.account_id
+            ).first()
+
+            if bank_account:
+                bank_account.balance -= db_income.income_amt
+                uow._session.add(bank_account)
+
             # Use the repository to delete the income
             success = income_repo.delete_income(income_id)
 
             if not success:
                 raise HTTPException(status_code=404, detail="Income not found")
+
+            # Commit the transaction
+            uow.commit()
 
             return {"message": "Income deleted successfully"}
